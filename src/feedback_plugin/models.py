@@ -18,8 +18,6 @@ from django.db import models
 from django_countries.fields import CountryField
 
 from django.utils import timezone
-
-
 class RawData(models.Model):
     '''
       This table holds the raw upload data reported.
@@ -87,6 +85,12 @@ class Data(models.Model):
             models.Index(fields=['upload', 'key'])
         ]
 
+class UploadData(models.Model):
+    upload = models.OneToOneField('Upload', null=True, blank=True, on_delete=models.CASCADE)
+    upload_json = models.JSONField(default=dict, blank=True)
+
+    def __str__(self):
+        return f'Pivoted data for upload {self.upload.id}'
 
 class ComputedUploadFact(models.Model):
     '''

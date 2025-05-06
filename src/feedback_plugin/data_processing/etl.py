@@ -8,7 +8,7 @@ from typing import Sequence
 from django.db.models import Q
 
 from feedback_plugin.models import (ComputedServerFact, ComputedUploadFact,
-                                    Data, RawData, Server, Upload)
+                                    Data, RawData, Server, Upload, UploadData)
 from .extractors import (DataExtractor, ServerFactExtractor, UploadFactExtractor,
                          combine_server_facts, combine_upload_facts)
 
@@ -307,3 +307,18 @@ def extract_upload_facts(start_date: datetime,
     logger.debug(f'Updating {len(facts_update)} already existing facts')
     ComputedUploadFact.objects.bulk_update(facts_update, ['value'],
                                            batch_size=1000)
+    
+def pivot_data():
+    raw_data = Data.objects.values('upload_id', 'key', 'value')
+    pivot_map = defaultdict(dict)
+
+    for row in raw_data:
+        pivot_map[row['upload_id']][row['key']] = row['value']
+
+    for upload_id, data in pivot_map.items():
+        UploadData.objects.update_or_create(
+            upload_id=upload_id,
+            defaults={'upload_json': data}
+        )
+
+    print("Pivoting complete.")
